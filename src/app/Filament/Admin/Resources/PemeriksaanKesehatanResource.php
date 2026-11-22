@@ -587,6 +587,7 @@ class PemeriksaanKesehatanResource extends Resource
         Model $record
     ): bool {
         return $record instanceof PemeriksaanKesehatan
+            && parent::canEdit($record)
             && self::bolehDiubah($record);
     }
 

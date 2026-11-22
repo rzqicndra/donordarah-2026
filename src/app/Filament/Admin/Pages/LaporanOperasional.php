@@ -13,6 +13,7 @@ use App\Models\DistribusiDarah;
 use App\Models\KantongDarah;
 use App\Models\PendaftaranDonor;
 use App\Models\PermintaanDarah;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Closure;
 use Filament\Actions;
@@ -38,6 +39,17 @@ class LaporanOperasional extends Page
 
     protected static string $view =
         'filament.admin.pages.laporan-operasional';
+
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User
+            && (
+                $user->hasRole('super_admin')
+                || ($user->hasRole('petugas') && $user->can('page_LaporanOperasional'))
+            );
+    }
 
     public ?string $tanggalMulai = null;
 

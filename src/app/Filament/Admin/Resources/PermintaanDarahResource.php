@@ -518,6 +518,7 @@ class PermintaanDarahResource extends Resource
     public static function canEdit(Model $record): bool
     {
         return $record instanceof PermintaanDarah
+            && parent::canEdit($record)
             && $record->dapatDiubah();
     }
 

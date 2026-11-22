@@ -534,6 +534,7 @@ class KantongDarahResource extends Resource
     public static function canEdit(Model $record): bool
     {
         return $record instanceof KantongDarah
+            && parent::canEdit($record)
             && ! in_array(
                 self::statusKantongEnum($record->status),
                 [
@@ -547,6 +548,7 @@ class KantongDarahResource extends Resource
     public static function canDelete(Model $record): bool
     {
         return $record instanceof KantongDarah
+            && parent::canDelete($record)
             && self::statusKantongEnum($record->status) === StatusKantongDarah::Menunggu;
     }
 

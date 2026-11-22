@@ -7,15 +7,14 @@ use Illuminate\Database\Seeder;
 class DatabaseSeeder extends Seeder
 {
     /**
-     * DatabaseSeeder hanya menyiapkan data sistem.
-     *
-     * Data pengguna, lokasi, jadwal, stok, permintaan,
-     * dan distribusi harus dimasukkan melalui aplikasi.
+     * Seeder ini hanya menyiapkan role dan permission sistem.
+     * Tidak membuat ulang akun ataupun menghapus data transaksi.
      */
     public function run(): void
     {
         $this->call([
             RoleSeeder::class,
+            RoleJobdeskPermissionSeeder::class,
         ]);
     }
 }

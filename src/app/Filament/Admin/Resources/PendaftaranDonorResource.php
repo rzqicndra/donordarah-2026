@@ -836,6 +836,7 @@ class PendaftaranDonorResource extends Resource
         Model $record
     ): bool {
         return $record instanceof PendaftaranDonor
+            && parent::canEdit($record)
             && $record->status ===
                 StatusPendaftaranDonor::Menunggu;
     }

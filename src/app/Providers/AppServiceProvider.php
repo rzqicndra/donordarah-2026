@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use App\Policies\ActivityPolicy;
 use Filament\Actions\MountableAction;
 use Filament\Notifications\Livewire\Notifications;
@@ -10,6 +11,7 @@ use Filament\Pages\Page;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\VerticalAlignment;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\ValidationException;
@@ -31,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureLocalMailRecipient();
+        $this->protectStaffFromDeletion();
 
         Gate::policy(
             Activity::class,
@@ -65,6 +68,47 @@ class AppServiceProvider extends ServiceProvider
                 );
             }
         );
+    }
+
+    /**
+     * Pertahanan tambahan bila pengguna memiliki permission langsung
+     * atau lebih dari satu role: Staff tetap tidak boleh menghapus data.
+     */
+    private function protectStaffFromDeletion(): void
+    {
+        Gate::before(static function (User $user, string $ability, array $arguments): ?bool {
+            if (! $user->hasRole('petugas') || $user->hasRole('super_admin')) {
+                return null;
+            }
+
+            // Permission langsung tidak boleh membuka akses administrasi.
+            if (
+                preg_match('/^(view(_any)?|create|update|delete(_any)?)_(role|activity|token)$/', $ability)
+                || preg_match('/^(create|update|delete(_any)?)_user$/', $ability)
+            ) {
+                return false;
+            }
+
+            $target = $arguments[0] ?? null;
+            $modelTarget = $target instanceof Model
+                || (is_string($target) && is_subclass_of($target, Model::class));
+
+            if (
+                $modelTarget
+                && in_array($ability, [
+                    'delete', 'deleteAny', 'forceDelete', 'forceDeleteAny',
+                    'restore', 'restoreAny', 'replicate', 'reorder',
+                ], true)
+            ) {
+                return false;
+            }
+
+            if (preg_match('/^(delete(_any)?|force_delete(_any)?|restore(_any)?|replicate|reorder)_/', $ability)) {
+                return false;
+            }
+
+            return null;
+        });
     }
 
     private function configureLocalMailRecipient(): void

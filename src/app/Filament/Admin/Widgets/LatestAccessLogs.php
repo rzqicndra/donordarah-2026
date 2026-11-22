@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Widgets;
 
+use App\Models\User;
 use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -16,6 +17,13 @@ class LatestAccessLogs extends BaseWidget
     protected static ?int $sort = 100;
 
     protected int|string|array $columnSpan = 2;
+
+    public static function canView(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User && $user->hasRole('super_admin');
+    }
 
     protected static function getLogNameColors(): array
     {

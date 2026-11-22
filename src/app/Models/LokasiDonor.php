@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class LokasiDonor extends Model
 {
@@ -20,6 +21,35 @@ class LokasiDonor extends Model
         'kapasitas_harian' => 'integer',
         'aktif' => 'boolean',
     ];
+
+    /**
+     * Buat slug unik saat lokasi baru disimpan tanpa mengubah slug yang sudah ada.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $lokasi): void {
+            if (filled($lokasi->slug)) {
+                return;
+            }
+
+            $nama = (string) ($lokasi->nama ?? $lokasi->nama_lokasi ?? '');
+            $dasar = Str::slug($nama);
+            $dasar = $dasar !== '' ? $dasar : 'lokasi-donor';
+            $dasar = substr($dasar, 0, 240);
+
+            $slug = $dasar;
+            $nomor = 2;
+
+            // Query ini juga mencakup baris soft-deleted karena model ini
+            // tidak menggunakan trait SoftDeletes.
+            while (self::query()->where('slug', $slug)->exists()) {
+                $slug = $dasar . '-' . $nomor;
+                $nomor++;
+            }
+
+            $lokasi->slug = $slug;
+        });
+    }
 
     public function jadwalDonors(): HasMany
     {

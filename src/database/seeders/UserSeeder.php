@@ -11,84 +11,64 @@ use Illuminate\Support\Facades\Hash;
 class UserSeeder extends Seeder
 {
     /**
-     * Membuat akun pengujian untuk development.
+     * Akun demo hanya untuk development. Tidak dijalankan DatabaseSeeder.
      */
     public function run(): void
     {
         if (app()->environment('production')) {
             $this->command?->warn(
-                'UserSeeder dilewati karena aplikasi sedang berjalan pada environment production.'
+                'UserSeeder dilewati pada environment production.'
             );
 
             return;
         }
 
-        $superAdmin = User::updateOrCreate(
+        $users = [
             [
                 'email' => 'admin@admin.com',
-            ],
-            [
                 'name' => 'Super Admin',
                 'nomor_telepon' => '081200000001',
-                'email_verified_at' => now(),
-                'password' => Hash::make('password'),
-                'status' => StatusPengguna::Aktif,
-            ]
-        );
-
-        $superAdmin->syncRoles([
-            PeranPengguna::SuperAdmin->value,
-        ]);
-
-        $petugas = User::updateOrCreate(
+                'role' => PeranPengguna::SuperAdmin->value,
+            ],
             [
                 'email' => 'petugas@admin.com',
-            ],
-            [
                 'name' => 'Petugas Donor Darah',
                 'nomor_telepon' => '081200000002',
-                'email_verified_at' => now(),
-                'password' => Hash::make('password'),
-                'status' => StatusPengguna::Aktif,
-            ]
-        );
-
-        $petugas->syncRoles([
-            PeranPengguna::Petugas->value,
-        ]);
-
-        $pendonor = User::updateOrCreate(
+                'role' => PeranPengguna::Petugas->value,
+            ],
             [
                 'email' => 'pendonor@donordarah.test',
-            ],
-            [
                 'name' => 'Pendonor Pengujian',
                 'nomor_telepon' => '081200000003',
-                'email_verified_at' => now(),
-                'password' => Hash::make('password'),
-                'status' => StatusPengguna::Aktif,
-            ]
-        );
-
-        $pendonor->syncRoles([
-            PeranPengguna::Pendonor->value,
-        ]);
-
-        $pemohonDonor = User::updateOrCreate(
-            [
-                'email' => 'pemohon@donordarah.test',
+                'role' => PeranPengguna::Pendonor->value,
             ],
             [
+                'email' => 'pemohon@donordarah.test',
                 'name' => 'Yayasan Harapan Sehat',
                 'nomor_telepon' => '081200000004',
-                'email_verified_at' => now(),
-                'password' => Hash::make('password'),
-                'status' => StatusPengguna::Aktif,
-            ]
-        );
+                'role' => PeranPengguna::PemohonDonor->value,
+            ],
+        ];
 
-        $pemohonDonor->syncRoles([
-            PeranPengguna::PemohonDonor->value,
-        ]);
+        foreach ($users as $data) {
+            $user = User::withoutEvents(
+                fn (): User => User::updateOrCreate(
+                    ['email' => $data['email']],
+                    [
+                        'name' => $data['name'],
+                        'nomor_telepon' => $data['nomor_telepon'],
+                        'password' => Hash::make('password'),
+                        'status' => StatusPengguna::Aktif,
+                    ]
+                )
+            );
+
+            // email_verified_at sengaja tidak dibuat mass-assignable.
+            $user->forceFill([
+                'email_verified_at' => now(),
+            ])->saveQuietly();
+
+            $user->syncRoles([$data['role']]);
+        }
     }
 }
